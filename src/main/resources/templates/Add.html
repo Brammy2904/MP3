@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+body, html {
+	background: black;
+	color: #66FF66;
+	overflow-x: hidden;
+}
+body::-webkit-scrollbar {
+	display: none;
+}
+#container {
+position: relative;
+margin: 170px;
+
+}
+#trackName, #trackURL, #imgURL, #artistName {
+	background: #66FF66;
+	color: black;
+	border-radius: 8px;
+	font-size: 24px;
+	position: relative;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 50%;
+	
+	height: 25px;
+}
+
+#button {
+	background: #66FF66;
+	color: black;
+	font-size: 24px;
+	border-radius: 8px;
+	position: relative;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 10%;
+/* 	height: 30px; */
+}
+.logo {
+	position: fixed;
+	top: 0;
+	left: 7%;
+}
+</style>
+<script>
+function download() {
+	
+}
+function sendURL(URL, title) {
+    window.location.href = "http://localhost:4000/download?URL="+URL+"&title="+title;
+}
+window.onload = function() {
+	
+	var image = document.createElement("img")
+	image.src="https://iili.io/0yj0ZX.png";
+	image.style.width = 100+"px"
+	image.style.height = 100 +"px";
+	image.setAttribute("class", "logo")
+	document.body.append(image)
+}
+	function add() {
+	
+		
+		var trackName = document.getElementById("trackName").value;
+		var trackURL = document.getElementById("trackURL").value;
+		var url = "src/main/resources/"+trackName+".mp3"
+		var imgURL = document.getElementById("imgURL").value;
+		var artistName = document.getElementById("artistName").value;
+		sendURL(trackURL, trackName);
+		axios.get("http://localhost:8080/data?trackName=" + trackName
+				+ "&trackURL=" + url + "&imgURL=" + imgURL
+				+ "&artistName=" + artistName)
+				console.log("Added: "+trackName);
+	}
+</script>
+</head>
+<body>
+<div id="container">
+	<input name="trackName" id="trackName" type="text"
+		placeholder="Name of the track...">
+	<br>
+
+	<input name="artistName" id="artistName" type="text"
+		placeholder="Name of the artist...">
+	<br>
+
+	<input name="trackURL" id="trackURL" type="text"
+		placeholder="Youtube video id...">
+	<br>
+
+	<input name="imgURL" id="imgURL" type="text"
+		placeholder="URL to image of cover...">
+	<br>
+	<button id="button" onclick="add()">Add</button>
+	</div>
+	<footer class="footer">
+		<div class="container1">
+			<div class="row1">
+
+				<a href="https://www.instagram.com/_bram_vrbn_/"><img
+					style="width: 50px"
+					src="https://www.pngmart.com/files/21/Instagram-Logo-PNG-Photo.png">Instagram</a>
+			</div>
+
+
+			<div class="col-md-2">
+				<h5 class="text-md-right">Made by Bram Verbeiren</h5>
+				<hr>
+
+
+			</div>
+		</div>
+	</footer>
+</body>
+</html>

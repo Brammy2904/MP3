@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>BroadZilla</title>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<link rel="icon" type="image/x-icon" href="https://iili.io/0yj0ZX.png">
+<script>
+//192.168.0.101 thuis
+
+//192.168.0.101 stage boven
+var i = 0;
+var empty = true;
+var home = true;
+var count = 0;
+var inter = null;
+var elem = null;
+var playing = false;
+var A = true;
+var artists = [];
+var playSong = null;
+var newArtists = []
+var keyTrue = true;
+var Playlist = [];
+class playlist {
+	trackName;
+	trackURL;
+	imgURL;
+	duration;
+	artistId;
+	constructor(trackName, trackURL, imgURL, duration, artistId) {
+		this.trackName = trackName;
+		this.trackURL = trackURL;
+		this.imgURL = imgURL;
+		this.duration = duration;
+		this.artistId = artistId;
+	}
+
+}
+window.onload = function() {
+	var image = document.createElement("img")
+	image.src = "https://iili.io/EfKP0x.png";
+	image.style.width = 120 + "px"
+	image.style.height = 120 + "px";
+	image.setAttribute("class", "logo")
+	document.body.append(image)
+	getTrack()
+	document.getElementById("playList").style.display = "block";
+}
+document.documentElement.addEventListener("keyup", function(ev) {
+	if (document.getElementById("liedjes").hasChildNodes()) {
+		var e = ev || window.event;
+		if (e.keyCode == 32) {
+			if (playing && playSong != null) {
+				Pause(playSong);
+				playing = false;
+			} else if (!playing && playSong != null) {
+				Play(playSong);
+				playing = true;
+			}
+		}
+		if (document.getElementById("liedjes").childElementCount != 1) {
+			if (e.keyCode == 39) {
+				if (document.getElementById("row:" + playSong).nextSibling != null && playing) {
+					const elem = document.getElementById("row:" + playSong).nextSibling;
+					var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+					Pause(playSong)
+					Play(action2);
+				} else if (document.getElementById("row:" + playSong).nextSibling == null && playing) {
+					const elem = document.getElementById("liedjes").firstElementChild;
+					var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+					Pause(playSong)
+					Play(action2);
+				}
+			}
+			if (e.keyCode == 37) {
+				if (document.getElementById("row:" + playSong).previousSibling != null && playing) {
+					const elem = document.getElementById("row:" + playSong).previousSibling;
+					var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+					Pause(playSong)
+					Play(action2);
+				} else if (document.getElementById("row:" + playSong).previousSibling == null && playing) {
+					const elem = document.getElementById("liedjes").lastElementChild;
+					var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+					Pause(playSong)
+					Play(action2);
+				}
+			}
+		}
+	}
+});
+window.addEventListener('keydown', function(e) {
+	if (e.keyCode == 32 && e.target == document.body) {
+		e.preventDefault();
+	}
+});
+async function backToPlay() {
+	if (home != false) {
+		if(playing && (Playlist.length != 0)){
+			document.getElementById("PlayPause").style.display = "block"	
+		}
+		else if(!playing || Playlist.length === 0){
+			document.getElementById("PlayPause").style.display = "none"
+		}
+		var teller = 0;
+		document.getElementById("home").style.display = "block";
+		document.getElementById("playList").style.display = "none";
+		document.getElementById("total").style.display = "block";
+		document.getElementById("removeAll").style.display = "block";
+		for (track of Playlist) {
+			teller = teller + 1;
+		}
+		document.getElementById("total").innerHTML = "Number of songs in the playlist: " + teller;
+		home = false;
+		document.getElementById("liedjes").innerHTML = "";
+		getTrackP()
+	}
+}
+
+function backToHome() {
+	if (home != true) {
+		if(playing){
+			document.getElementById("PlayPause").style.display = "block"	
+		}
+		else if(!playing){
+			document.getElementById("PlayPause").style.display = "none"
+		}
+		document.getElementById("playList").style.display = "block";
+		document.getElementById("home").style.display = "none";
+		document.getElementById("total").style.display = "none";
+		document.getElementById("removeAll").style.display = "none";
+		home = true;
+		document.getElementById("liedjes").innerHTML = "";
+		getTrack()
+	}
+}
+async function getAr(id) {
+	var newArray;
+	await axios.get('http://192.168.0.101:8080/artist').then(function(response) {
+		var artistName
+		var artistCount = 0;
+		for (artist of response.data) {
+			if (artist.Id == id) {
+				artistName = artist.artistName
+				newArtists.push(artist)
+			}
+		}
+	})
+}
+async function getArtist(artistId) {
+	await axios.get('http://192.168.0.101:8080/artist').then(function(response) {
+		var artistName
+		var artistCount = 0;
+		for (artist of response.data) {
+			if (artistId == artist.Id) {
+				artistName = artist.artistName
+				artists.push(artist)
+			}
+		}
+
+	})
+}
+
+function addToDb(trackName) {
+	var playl = null;
+	for (var i = 0; i < Playlist.length; i++) {
+		if (Playlist[i].trackName === trackName) {
+
+			playl = Playlist[i];
+		}
+	}
+	if (trackName != null) {
+		if (playl != null) {
+			return;
+		} else {
+			axios.get('http://192.168.0.101:8080/addPlaylist?trackName=' + trackName).then(function(response) {
+				var play1 = new playlist(trackName, response.data.trackURL, response.data.imgURL, response.data.duration, response.data.artistId);
+				Playlist.push(play1);
+			})
+		}
+	}
+}
+async function removeFromDb(trackName) {
+
+	document.getElementById("liedjes").innerHTML = "";
+	for (var i = 0; i < Playlist.length; i++) {
+		if (Playlist[i].trackName == trackName) {
+			Playlist.splice(i, 1);
+		}
+	}
+	document.getElementById("total").innerHTML = "Number of songs in the playlist: " + Playlist.length;
+	getTrackP();
+}
+
+function removeAll() {
+	Playlist = [];
+	document.getElementById("liedjes").innerHTML = ""
+	document.getElementById("total").innerHTML = "Number of songs in the playlist: " + Playlist.length;
+	getTrackP();
+}
+
+function Pause(action) {
+	document.getElementById("PlayPause").src = "https://jccdallas.org/wp-content/uploads/2020/06/Spotify-Play-Button.png"
+		
+	if (playSong != null) {
+		if (action === playSong) {
+			clearInterval(inter);
+			playing = false;
+			document.getElementById("row:" + action).style.backgroundColor = "black";
+			document.getElementById("row:" + action).style = document.getElementsByClassName("row").style
+			document.getElementsByClassName(action)[2].value = 0;
+			axios.get('http://192.168.0.101:8080/Control?action=pause&trackName=' + action)
+		}
+	} else {
+		axios.get('http://192.168.0.101:8080/Control?action=pause&trackName=' + action)
+	}
+}
+
+function Play(action) {
+	document.getElementById("PlayPause").style.display = "block"
+		document.getElementById("PlayPause").src = "https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png"
+			
+	playing = true;
+	playSong = action;
+//
+
+	document.getElementById("row:" + action).style.background = "linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%)";
+	document.getElementById("row:"+playSong).style.borderBottom = "none";
+	document.getElementById("row:"+playSong).style.border = "solid 2px #82CF";
+	inter = setInterval(function() {
+		axios.get('http://192.168.0.101:8080/getRunTime')
+			.then(function(response) {
+				if (document.getElementById("row:" + action) != null) {
+					document.getElementsByClassName(action)[2].value = response.data;
+					if (parseInt(document.getElementsByClassName(action)[2].getAttribute("max")) == document.getElementsByClassName(action)[2].value) {
+						document.getElementById("row:" + action).style = document.getElementsByClassName("row").style
+						clearInterval(inter)
+						document.getElementsByClassName(action)[2].value = 0;
+
+						if (document.getElementById("row:" + action).nextSibling != null) {
+							const elem = document.getElementById("row:" + action).nextSibling;
+							var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+							Play(action2);
+						} else {
+							const elem = document.getElementById("liedjes").firstElementChild;
+
+							var action2 = elem.getAttribute("id").substring(elem.getAttribute("id").indexOf(':') + 1);
+							Play(action2);
+
+						}
+					}
+				}
+			})
+
+	}, 1500)
+	var volume = 0 + "." +document.getElementById("changeVolum").value
+	axios.get('http://192.168.0.101:8080/Control?action=play&trackName=' + action+"&volume="+volume);
+}
+function playPause(){
+		if(playing == true){
+			Pause(playSong)
+		}
+		else if (playing != true){
+			Play(playSong)
+		}
+}
+async function search2(searchText) {
+	document.getElementById("footer").style.display = "none"
+	var playCount = 0;
+
+	for (track of Playlist) {
+		if (track.trackName.toLowerCase().indexOf(searchText.toLowerCase()) !== -1) {
+			playCount += 1;
+			count = count + 1;
+			await getAr(track.artistId)
+			var duration = track.duration;
+			var trackName = track.trackName;
+			var trackURL = track.trackURL;
+			var image = document.createElement("img")
+			image.src = track.imgURL;
+			image.style.width = 120 + "px"
+			image.style.height = 120 + "px";
+			image.style.borderRadius = 10 + "px";
+			if (track.trackName == "Classical") {
+				image.onclick = function() {
+					window.open('https://www.youtube.com/watch?v=VjnE8bxD41w', '_blank')
+					if (playing == true && playSong != null) {
+						Pause(playSong);
+					}
+				};
+
+			}
+
+			var row = document.createElement("div")
+			row.classList.add("row")
+			row.setAttribute("id", "row:" + track.trackName)
+			var column1 = document.createElement("div")
+			column1.classList.add("column")
+			var b = document.createElement("B");
+			var t = document.createTextNode(trackName);
+			b.append(t)
+			column1.append(b)
+			var column2 = document.createElement("div")
+			column2.classList.add("column")
+			// 			var text2 = document.createTextNode("ArtistName")
+			var b1 = document.createElement("B");
+			var t1 = document.createTextNode(artists[count - 1].artistName);
+			b1.append(t1)
+			column2.append(b1)
+			var column3 = document.createElement("div")
+			column3.classList.add("column")
+			var text3 = document.createTextNode("Image")
+			column3.append(image)
+			var column4 = document.createElement("div")
+			column4.classList.add("column")
+			var button = document.createElement("button")
+			var b = document.createElement("B")
+			var t = document.createTextNode("Remove from playlist")
+			b.append(t)
+			button.append(b)
+
+			button.setAttribute("class", "buttons")
+			b.setAttribute("id", track.trackName)
+			button.addEventListener("click", async function() {
+				await removeFromDb(event.target.getAttribute("id"));
+
+			});
+			button.style.height = 40 + "px"
+			button.style.width = 100 + "px"
+			var playText = document.createTextNode("play")
+			var play = document.createElement("img")
+			play.src = "https://jccdallas.org/wp-content/uploads/2020/06/Spotify-Play-Button.png";
+			play.style.width = 40 + "px";
+			play.setAttribute("class", trackName)
+			play.addEventListener("mouseover", function(event) {
+				// highlight the mouseover target
+				event.target.style.cursor = "pointer";
+			}, false);
+			if (track.trackName == "Never Gonna Give You Up") {
+				image.onclick = function() {
+					window.open('https://youtu.be/dQw4w9WgXcQ');
+					if (playing == true && playSong != null) {
+						Pause(playSong);
+					}
+				}
+			}
+			var element = document.getElementsByClassName(trackName)
+			var pause = document.createElement("img")
+
+			pause.src = "https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png";
+			pause.style.width = 40 + "px";
+			pause.setAttribute("class", trackName)
+			pause.addEventListener("mouseover", function(event) {
+				// highlight the mouseover target
+				event.target.style.cursor = "pointer";
+			}, false);
+			i = i + 1;
+			var pauseText = document.createTextNode("pause")
+			pause.append(pauseText)
+
+			play.append(playText)
+			var br = document.createElement("br")
+			var slide = document.createElement("INPUT");
+			slide.setAttribute("type", "range");
+			slide.setAttribute("min", 0)
+			slide.setAttribute("max", duration)
+			slide.value = 0;
+			slide.addEventListener("input", function() {
+				if (playing == true) {
+					var event = window.event;
+					var value = event.target.value + ".000";
+					axios.get('http://192.168.0.101:8080/change?time=' + value)
+				}
+			});
+			slide.setAttribute("id", "change")
+			//	 		slide.innerHTML = "<input type='range' min='0' max= '"+duration+"'value='0' oninput='change(event)' id='change'>"
+			slide.setAttribute("class", trackName)
+			column4.append(play)
+
+			column4.append(pause)
+
+			column4.append(slide)
+			column4.append(br);
+			column4.append(button);
+			row.append(column1)
+			row.append(column2)
+			row.append(column3)
+			row.append(column4)
+			document.getElementById("liedjes").append(row)
+			var element = document.getElementsByClassName(trackName)
+			play.addEventListener('click', function() {
+				var action = event.target.getAttribute('class');
+				if (playSong != null && playing == true) {
+					Pause(playSong)
+				}
+
+				playing = true;
+
+
+				Play(action);
+			});
+
+			if (track.trackName == "Never Gonna Give You Up") {
+				image.onclick = function() {
+					window.open('https://youtu.be/dQw4w9WgXcQ');
+					if (playing == true && playSong != null) {
+						Pause(playSong);
+					}
+				}
+			}
+
+			pause.addEventListener('click', function(event) {
+				var action = event.target.getAttribute('class');
+				Pause(action);
+			});
+		}
+	}
+	if (playCount == 0 && Playlist.length != 0) {
+		document.getElementById("total").style.display = "none"
+		var row = document.createElement("div")
+		row.classList.add("rowN")
+		var column1 = document.createElement("div")
+		column1.classList.add("column")
+		var b2 = document.createElement("B");
+		var t2 = document.createTextNode("No results found...");
+		b2.append(t2)
+
+		column1.append(b2)
+		row.append(column1)
+		document.getElementById("liedjes").append(row)
+
+	}
+	if (playCount == 0 && Playlist.length == 0) {
+		var row = document.createElement("div")
+		row.classList.add("rowN")
+		var column1 = document.createElement("div")
+		column1.classList.add("column")
+		var b2 = document.createElement("B");
+		var t2 = document.createTextNode("Your playlist is empty...");
+		b2.append(t2)
+		column1.append(b2)
+		row.append(column1)
+		document.getElementById("liedjes").append(row)
+	}
+	if (playing) {
+		if(document.getElementById("row:"+playSong) != null){
+		document.getElementById("row:" + playSong).style.background = "linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%)";
+		document.getElementById("row:"+playSong).style.borderBottom = "none";
+		document.getElementById("row:"+playSong).style.border = "solid 2px #82CF";
+	}
+	}
+
+	newArtists = []
+
+
+
+}
+async function search1(searchText) {
+	document.getElementById("footer").style.display = "none";
+	axios.get('http://192.168.0.101:8080/getTrack?trackName=' + searchText).then(async function(response) {
+		if (response.data.length === 0) {
+
+			var row = document.createElement("div")
+			row.classList.add("rowN")
+			var column1 = document.createElement("div")
+			column1.classList.add("column")
+			var b2 = document.createElement("B");
+			var t2 = document.createTextNode("No results found...");
+			b2.append(t2)
+
+			column1.append(b2)
+			row.append(column1)
+			document.getElementById("liedjes").append(row)
+			document.getElementById("footer").style.display = "none";
+
+		} else {
+			for (track of response.data) {
+				count = count + 1;
+				await getAr(track.artistId)
+				var duration = track.duration;
+				var trackName = track.trackName;
+				var trackURL = track.trackURL;
+				var image = document.createElement("img")
+				image.src = track.imgURL;
+				image.style.width = 120 + "px"
+				image.style.height = 120 + "px";
+				image.style.borderRadius = 10 + "px";
+				if (track.trackName == "Classical") {
+					image.onclick = function() {
+						window.open('https://www.youtube.com/watch?v=VjnE8bxD41w', '_blank')
+						if (playing == true && playSong != null) {
+							Pause(playSong);
+						}
+					};
+
+				}
+
+				var row = document.createElement("div")
+				row.classList.add("row")
+				var column1 = document.createElement("div")
+				column1.classList.add("column")
+				var b = document.createElement("B");
+				var t = document.createTextNode(trackName);
+				b.append(t)
+				column1.append(b)
+				var column2 = document.createElement("div")
+				column2.classList.add("column")
+				var text2 = document.createTextNode("ArtistName")
+				var b1 = document.createElement("B");
+				var t1 = document.createTextNode(newArtists[count - 1].artistName);
+				b1.append(t1)
+
+				column2.append(b1)
+
+				var column3 = document.createElement("div")
+				column3.classList.add("column")
+				var text3 = document.createTextNode("Image")
+				column3.append(image)
+				var column4 = document.createElement("div")
+				column4.classList.add("column")
+				var button = document.createElement("button")
+				var b = document.createElement("B")
+				var t = document.createTextNode("Add to playlist")
+				b.append(t)
+				button.append(b)
+				b.setAttribute("id", track.trackName)
+				button.setAttribute("class", "buttons")
+				button.addEventListener("click", function() {
+					addToDb(event.target.getAttribute("id"));
+				});
+
+				var playText = document.createTextNode("play")
+				var play = document.createElement("img")
+				play.src = "https://jccdallas.org/wp-content/uploads/2020/06/Spotify-Play-Button.png";
+				play.style.width = 40 + "px";
+				play.setAttribute("class", trackName)
+				row.setAttribute("id", "row:" + track.trackName)
+				play.addEventListener("mouseover", function(event) {
+					// highlight the mouseover target
+					event.target.style.cursor = "pointer";
+				}, false);
+				var element = document.getElementsByClassName(trackName)
+				var pause = document.createElement("img")
+				pause.src = "https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png";
+				pause.style.width = 40 + "px";
+				pause.setAttribute("class", trackName)
+				pause.addEventListener("mouseover", function(event) {
+					// highlight the mouseover target
+					event.target.style.cursor = "pointer";
+				}, false);
+				i = i + 1;
+				var pauseText = document.createTextNode("pause")
+				pause.append(pauseText)
+				play.append(playText)
+				var br = document.createElement("br")
+				var slide = document.createElement("INPUT");
+				slide.setAttribute("type", "range");
+				slide.setAttribute("min", 0)
+				slide.setAttribute("max", duration)
+				slide.value = 0;
+				slide.addEventListener("input", function() {
+					if (playing == true) {
+						var event = window.event;
+						var value = event.target.value + ".000";
+						axios.get('http://192.168.0.101:8080/change?time=' + value)
+					}
+				});
+				slide.setAttribute("id", "change")
+				//		 		slide.innerHTML = "<input type='range' min='0' max= '"+duration+"'value='0' oninput='change(event)' id='change'>"
+				slide.setAttribute("class", trackName)
+				column4.append(play)
+
+				column4.append(pause)
+
+				column4.append(slide)
+				column4.append(br);
+				column4.append(button)
+				row.append(column1)
+				row.append(column2)
+				row.append(column3)
+				row.append(column4)
+				document.getElementById("liedjes").append(row)
+				var element = document.getElementsByClassName(trackName)
+				play.addEventListener('click', function() {
+					var action = event.target.getAttribute('class');
+					if (playSong != null && playing == true) {
+						Pause(playSong)
+					}
+
+					playing = true;
+
+
+					Play(action);
+				});
+
+				if (track.trackName == "Never Gonna Give You Up") {
+					image.onclick = function() {
+						window.open('https://youtu.be/dQw4w9WgXcQ');
+						if (playing == true && playSong != null) {
+							Pause(playSong);
+						}
+					}
+				}
+
+				pause.addEventListener('click', function(event) {
+					var action = event.target.getAttribute('class');
+					Pause(action);
+				});
+			}
+		}
+	}).then(function() {
+		if (playing) {
+			if(document.getElementById("row:"+playSong) != null){
+			document.getElementById("row:" + playSong).style.background = "linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%)";
+			document.getElementById("row:"+playSong).style.borderBottom = "none";
+			document.getElementById("row:"+playSong).style.border = "solid 2px #82CF";
+		}
+		}
+		newArtists = []
+
+	})
+}
+
+function search() {
+	var url = null;
+
+	count = 0;
+	var searchText = document.getElementById('search').value;
+	document.getElementById("liedjes").innerHTML = '';
+	if (searchText === "") {
+		artists = [];
+		if (home) {
+			getTrack();
+		}
+		if (!home) {
+			getTrackP()
+		}
+
+	} else {
+		if (home) {
+			search1(searchText).then(function() {
+				document.getElementById("footer").style.display = "none";
+			});
+		}
+		if (!home) {
+			search2(searchText).then(function() {
+				document.getElementById("footer").style.display = "none";
+			});
+		}
+
+	}
+}
+
+function changeVolum(event) {
+	var volume = 0 + "." + event.target.value;
+	axios.get('http://192.168.0.101:8080/volume?volume=' + volume);
+}
+
+
+
+function getTrack(artistName) {
+	document.getElementById("footer").style.display = "none";
+	axios.get('http://192.168.0.101:8080/track')
+		.then(async function(response) {
+			for (track of response.data) {
+				await getArtist(track.artistId)
+				count = count + 1;
+				var duration = track.duration;
+				var trackName = track.trackName;
+				var trackURL = track.trackURL;
+				var image = document.createElement("img")
+				image.src = track.imgURL;
+				image.style.width = 120 + "px"
+				image.style.height = 120 + "px";
+				image.style.borderRadius = 10 + "px";
+				image.setAttribute("id", "image:" + track.trackName)
+				if (track.trackName == "Classical") {
+					image.onclick = function() {
+						window.open('https://www.youtube.com/watch?v=VjnE8bxD41w', '_blank')
+						if (playing == true && playSong != null) {
+							Pause(playSong);
+						}
+					};
+
+				}
+
+				var row = document.createElement("div")
+				row.classList.add("row")
+				row.setAttribute("id", "row:" + track.trackName)
+				var column1 = document.createElement("div")
+				column1.classList.add("column")
+				var b = document.createElement("B");
+				var t = document.createTextNode(trackName);
+				b.append(t)
+				column1.append(b)
+				var column2 = document.createElement("div")
+				column2.classList.add("column")
+				// 			var text2 = document.createTextNode("ArtistName")
+				var b1 = document.createElement("B");
+				var t1 = document.createTextNode(artists[count - 1].artistName);
+				b1.append(t1)
+				column2.append(b1)
+				var column3 = document.createElement("div")
+				column3.classList.add("column")
+				var text3 = document.createTextNode("Image")
+				column3.append(image)
+				var column4 = document.createElement("div")
+				column4.classList.add("column")
+				var button = document.createElement("button")
+				var b = document.createElement("B")
+				var t = document.createTextNode("Add to playlist")
+				b.append(t)
+				button.append(b)
+				b.setAttribute("id", track.trackName)
+				button.setAttribute("class", "buttons")
+
+
+				button.addEventListener("click", function(event) {
+					addToDb(event.target.getAttribute("id"));
+				});
+
+				var playText = document.createTextNode("play")
+				var play = document.createElement("img")
+				play.src = "https://i.ibb.co/dBsWn9L/play.png";
+				play.style.width = 40 + "px";
+				play.setAttribute("class", trackName)
+				play.addEventListener("mouseover", function(event) {
+					// highlight the mouseover target
+					event.target.style.cursor = "pointer";
+				}, false);
+				if (track.trackName == "Never Gonna Give You Up") {
+					image.onclick = function() {
+						window.open('https://youtu.be/dQw4w9WgXcQ');
+						if (playing == true && playSong != null) {
+							Pause(playSong);
+						}
+					}
+				}
+				var element = document.getElementsByClassName(trackName)
+				var pause = document.createElement("img")
+
+				pause.src = "https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png";
+				pause.style.width = 40 + "px";
+				pause.setAttribute("class", trackName)
+				pause.addEventListener("mouseover", function(event) {
+					// highlight the mouseover target
+					event.target.style.cursor = "pointer";
+				}, false);
+				i = i + 1;
+				var pauseText = document.createTextNode("pause")
+				pause.append(pauseText)
+
+				play.append(playText)
+				var br = document.createElement("br")
+				var slide = document.createElement("INPUT");
+				slide.setAttribute("type", "range");
+				slide.setAttribute("min", 0)
+				slide.setAttribute("max", duration)
+				slide.value = 0;
+				slide.addEventListener("input", function() {
+					if (playing == true) {
+						var event = window.event;
+						var value = event.target.value + ".000";
+						axios.get('http://192.168.0.101:8080/change?time=' + value)
+					}
+				});
+				slide.setAttribute("id", "change")
+				//	 		slide.innerHTML = "<input type='range' min='0' max= '"+duration+"'value='0' oninput='change(event)' id='change'>"
+				slide.setAttribute("class", trackName)
+				column4.append(play)
+
+				column4.append(pause)
+
+				column4.append(slide)
+				column4.append(br);
+				column4.append(button);
+				row.append(column1)
+				row.append(column2)
+				row.append(column3)
+				row.append(column4)
+				document.getElementById("liedjes").append(row)
+				var element = document.getElementsByClassName(trackName)
+				play.addEventListener('click', function() {
+					var action = event.target.getAttribute('class');
+					if (playSong != null && playing == true) {
+						Pause(playSong)
+					}
+
+					playing = true;
+
+
+					Play(action);
+				});
+				pause.addEventListener('click', function(event) {
+
+					var action = event.target.getAttribute('class');
+					Pause(action);
+				});
+
+			}
+		}).then(function() {
+			if (playing) {
+				document.getElementById("row:" + playSong).style.background = "linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%)";
+				document.getElementById("row:"+playSong).style.borderBottom = "none";
+				document.getElementById("row:"+playSong).style.border = "solid 2px #82CF";
+			}
+			document.getElementById("footer").style.display = "block";
+
+			newArtists = []
+
+		})
+}
+
+async function getTrackP() {
+	document.getElementById("footer").style.display = "none";
+	document.getElementById("total").style.display = "block"
+	if (Playlist.length === 0) {
+		document.getElementById("total").style.display = "none"
+		var row = document.createElement("div")
+		row.classList.add("rowN")
+		var column1 = document.createElement("div")
+		column1.classList.add("column")
+		var b2 = document.createElement("B");
+		var t2 = document.createTextNode("Your playlist is empty...");
+		b2.append(t2)
+		column1.append(b2)
+		row.append(column1)
+		document.getElementById("liedjes").append(row)
+	}
+	for (track of Playlist) {
+
+
+
+		await getArtist(track.artistId)
+		count = count + 1;
+		var duration = track.duration;
+		var trackName = track.trackName;
+		var trackURL = track.trackURL;
+		var image = document.createElement("img")
+		image.src = track.imgURL;
+		image.style.width = 120 + "px"
+		image.style.height = 120 + "px";
+		image.style.borderRadius = 10 + "px";
+		image.setAttribute("id", "image:" + track.trackName)
+		if (track.trackName == "Classical") {
+			image.onclick = function() {
+				window.open('https://www.youtube.com/watch?v=VjnE8bxD41w', '_blank')
+				if (playing == true && playSong != null) {
+					Pause(playSong);
+				}
+			};
+
+		}
+
+		var row = document.createElement("div")
+		row.classList.add("row")
+		row.setAttribute("id", "row:" + track.trackName)
+		var column1 = document.createElement("div")
+		column1.classList.add("column")
+		var b = document.createElement("B");
+		var t = document.createTextNode(trackName);
+		b.append(t)
+		column1.append(b)
+		var column2 = document.createElement("div")
+		column2.classList.add("column")
+		// 			var text2 = document.createTextNode("ArtistName")
+		var b1 = document.createElement("B");
+		var t1 = document.createTextNode(artists[count - 1].artistName);
+		b1.append(t1)
+		column2.append(b1)
+		var column3 = document.createElement("div")
+		column3.classList.add("column")
+		var text3 = document.createTextNode("Image")
+		column3.append(image)
+		var column4 = document.createElement("div")
+		column4.classList.add("column")
+		var button = document.createElement("button")
+		var b = document.createElement("B")
+		var t = document.createTextNode("Remove from playlist")
+		b.append(t)
+		button.append(b)
+
+		button.setAttribute("class", "buttons")
+		b.setAttribute("id", track.trackName)
+		button.addEventListener("click", async function() {
+			await removeFromDb(event.target.getAttribute("id"));
+
+		});
+		button.style.height = 40 + "px"
+		button.style.width = 100 + "px"
+		var playText = document.createTextNode("play")
+		var play = document.createElement("img")
+		play.src = "https://jccdallas.org/wp-content/uploads/2020/06/Spotify-Play-Button.png";
+		play.style.width = 40 + "px";
+		play.setAttribute("class", trackName)
+		play.addEventListener("mouseover", function(event) {
+			// highlight the mouseover target
+			event.target.style.cursor = "pointer";
+		}, false);
+		if (track.trackName == "Never Gonna Give You Up") {
+			image.onclick = function() {
+				window.open('https://youtu.be/dQw4w9WgXcQ');
+				if (playing == true && playSong != null) {
+					Pause(playSong);
+				}
+			}
+		}
+		var element = document.getElementsByClassName(trackName)
+		var pause = document.createElement("img")
+
+		pause.src = "https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png";
+		pause.style.width = 40 + "px";
+		pause.setAttribute("class", trackName)
+		pause.addEventListener("mouseover", function(event) {
+			// highlight the mouseover target
+			event.target.style.cursor = "pointer";
+		}, false);
+		i = i + 1;
+		var pauseText = document.createTextNode("pause")
+		pause.append(pauseText)
+
+		play.append(playText)
+		var br = document.createElement("br")
+		var slide = document.createElement("INPUT");
+		slide.setAttribute("type", "range");
+		slide.setAttribute("min", 0)
+		slide.setAttribute("max", duration)
+		slide.value = 0;
+		slide.addEventListener("input", function() {
+			if (playing == true) {
+				var event = window.event;
+				var value = event.target.value + ".000";
+				axios.get('http://192.168.0.101:8080/change?time=' + value)
+			}
+		});
+		slide.setAttribute("id", "change")
+		//	 		slide.innerHTML = "<input type='range' min='0' max= '"+duration+"'value='0' oninput='change(event)' id='change'>"
+		slide.setAttribute("class", trackName)
+		column4.append(play)
+
+		column4.append(pause)
+
+		column4.append(slide)
+		column4.append(br);
+		column4.append(button);
+		row.append(column1)
+		row.append(column2)
+		row.append(column3)
+		row.append(column4)
+		document.getElementById("liedjes").append(row)
+		var element = document.getElementsByClassName(trackName)
+		play.addEventListener('click', function() {
+			var action = event.target.getAttribute('class');
+			if (playSong != null && playing == true) {
+				Pause(playSong)
+			}
+
+			playing = true;
+
+
+			Play(action);
+		});
+		pause.addEventListener('click', function(event) {
+
+			var action = event.target.getAttribute('class');
+			Pause(action);
+		});
+	}
+
+	if (playing) {
+		if (document.getElementById("row:" + playSong) != null) {
+			
+				document.getElementById("row:" + playSong).style.background = "linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%)";
+				document.getElementById("row:"+playSong).style.borderBottom = "none";
+				document.getElementById("row:"+playSong).style.border = "solid 2px #82CF";
+			
+		}
+	}
+
+	newArtists = []
+
+
+}
+</script>
+<style>
+/* .flex{ */
+/* display:flex; */
+/* justify-content:center; */
+/* } */
+@import url('http://fonts.cdnfonts.com/css/gotham');
+
+body {
+	/* 	background-image: */
+	/* 		url("https://r1.ilikewallpaper.net/ipad-pro-wallpapers/download/101114/sky-full-of-stars-5k-ipad-pro-wallpaper-ilikewallpaper_com.jpg"); */
+	
+	background: linear-gradient(45deg, rgba(107, 64, 147, 1) 0%,
+		rgba(216, 61, 56, 1) 50%, rgba(242, 158, 32, 1) 100%);
+	font-family: 'Gotham Medium', sans-serif;
+}
+
+html, body {
+	font-size: 18px;
+	margin: 0; /* remove default margin */
+	padding: 0; /* remove default padding */
+	width: 100%; /* take full browser width */
+	height: 100%; /* take full browser height*/
+	overflow-x: hidden;
+}
+
+body::-webkit-scrollbar {
+	display: none;
+}
+
+#container {
+	margin: 15px;
+	position: relative;
+	width: 100%;
+	/* 	height:100%; */
+}
+
+.row {
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 70%;
+	height: 180px;
+	border-radius: 30px;
+	border-bottom: 2px solid #66FF66;
+}
+.rowN {
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 70%;
+	height: 180px;
+	border-radius: 30px;
+}
+
+.rowV {
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 60%;
+	height: 160px;
+	border-radius: 30px;
+}
+
+.rowH {
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 70%;
+	height: 50px;
+}
+
+.column {
+	display: flex;
+	flex-direction: column;
+	flex-basis: 80%;
+	flex: 1;
+	color: white;
+}
+
+.row:hover {
+	background-color: #6b82ff;
+}
+
+.column {
+	display: flex;
+	flex-direction: column;
+	flex-basis: 100%;
+	flex: 1;
+	justify-content: center; /* align horizontal */
+	align-items: center;
+	color: white;
+}
+
+.Header {
+	justify-content: center; /* align horizontal */
+	align-items: center;
+	height: 50px;
+	display: flex;
+	flex-direction: column;
+	flex-basis: 100%;
+	flex: 1;
+	/* 	background-color: black; */
+	/* 	border-style: solid; */
+	/* 	border-color: black; */
+	/* 	border-radius: 30px; */
+	color: black;;
+	font-size: 24px;
+}
+#PlayPause {
+width:40px;
+margin: 0 auto;
+	display: flex;
+	cursor: pointer;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+#change {
+	background: linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%);
+	border: solid 1px #82CFD0;
+	border-radius: 8px;
+	outline: none;
+	transition: background 450ms ease-in;
+	-webkit-appearance: none;
+	
+}
+
+#change::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 25px;
+	height: 25px;
+	border-radius: 50%;
+	background: black;
+	cursor: pointer;
+}
+
+.buttons {
+	width: 110px;
+	height: 25px;
+	background: linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%);
+	color: black;
+	border-radius: 8px;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	cursor: pointer;
+	flex-direction: row;
+	flex-wrap: wrap;
+	border: solid 1px #82CFD0;
+}
+
+#changeVolum {
+	background: linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%);
+	border: solid 1px black;
+	border-radius: 8px;
+	outline: none;
+	-webkit-appearance: none;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 50%;
+}
+
+#changeVolum::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 25px;
+	height: 50px;
+	border-radius: 25%;
+	background: black;
+	cursor: pointer;
+}
+
+#total {
+	color: black;
+	position: relative;
+	text-align: center;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+#textVol {
+	color: black;
+	position: relative;
+	text-align: center;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.logo {
+	position: fixed;
+	top: 0;
+	left: 4%;
+}
+
+#output {
+	color: black;
+	position: relative;
+	text-align: center;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+#search {
+	background: linear-gradient(45deg, rgba(242, 158, 32, 1)  0%, rgba(216, 61, 56, 1) 50%, rgba(107, 64, 147, 1) 100%);
+	color: black;
+	position: relative;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 60%;
+	height: 25px;
+	border-radius: 8px;
+	font-size: 24px;
+	border: none;
+}
+
+#footer {
+	overflow: hidden;
+	text-align: center;
+	bottom: 0;
+}
+@media screen and (max-width: 992px) {
+#container{
+width:110%;
+}
+.row, .rowH, .rowV{
+width: 70%;
+}
+.buttons {
+	width: 110px;
+	height: 40px;
+	background: black;
+	color: #66FF66;
+	border-radius: 8px;
+	display: table;
+	margin: 0 auto;
+	display: flex;
+	cursor: pointer;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+}
+
+.wrap {
+	background: #ddd;
+	width: 140%;
+	margin-left: -20%;
+	margin-right: -20%;
+	border-top-left-radius: 50%;
+	border-top-right-radius: 50%;
+	height: 100px;
+	padding-top: 1em;
+}
+</style>
+</head>
+<body>
+
+	<div id='container'>
+		<div class="rowV" style="height: 20px;">
+			<b id="textVol">Volume</b>
+		</div>
+		<div class="rowV" style="height: 50px;">
+			<input type='range' min='10' max="99" value='99'
+				oninput='changeVolum(event)' id='changeVolum' placeholder="Volume">
+		</div>
+
+
+		<br>
+		<div class='rowH'>
+			<div class='Header'>
+				<b>Track Name</b>
+			</div>
+			<div class='Header'>
+				<b>Artist Name</b>
+			</div>
+			<div class="Header">
+				<b>Cover</b>
+			</div>
+			<div class="Header">
+				<b>Control panel</b>
+			</div>
+		</div>
+		<br> <input type="text" id="search" oninput="search()"
+			placeholder="search for track names..."> <br>
+		<button id="home" class="buttons" onclick="backToHome()"
+			style="display: none">
+			<b>Home</b>
+		</button>
+		<button id="playList" class="buttons" onclick="backToPlay()"
+			style="display: none">
+			<b>Playlist</b>
+		</button>
+		<button id="removeAll" style="display: none" class="buttons"
+			onclick="removeAll()">
+			<b>Clear playlist</b>
+		</button>
+		<br>
+		<img id="PlayPause" onclick="playPause()" style="display:none" src="https://cutewallpaper.org/24/pause-png/free-white-pause-icon-download-white-pause-icon.png"></img>
+		<br> <b style="display: none" id="total"></b>
+		
+		<div id="liedjes"></div>
+	</div>
+	<footer id="footer" role="contentinfo">
+		<div class="wrap">
+			<b>Made by Bram Verbeiren</b>
+		</div>
+	</footer>
+
+
+
+
+</body>
+</html>

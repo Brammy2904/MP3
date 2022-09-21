@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>YouTube Downloader</title>
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script src='script.js'></script>
+<style>
+* {
+	text-align: center;
+}
+
+.heading {
+	font-family: Arial;
+	margin-top: 40vh;
+}
+
+#URL-input, .convert-button {
+	font-size: 1.3em;
+	padding: 5px 10px;
+}
+
+#URL-input {
+	border-radius: 4px 0px 0px 4px;
+	width: 30em;
+	text-align: left;
+	border: 2px solid #EEEEEE;
+	background: #EEEEEE;
+	outline: none;
+}
+
+#URL-input:focus {
+	border: 2px solid #0485ff;
+}
+
+#convert-button {
+	border-radius: 0px 4px 4px 0px;
+	border: 2px solid #0485ff;
+	background: #0485ff;
+	color: white;
+}
+</style>
+
+</head>
+<body>
+	<h1 class="heading">My Own YouTube Downloader !</h1>
+	<input id="URL-input"
+		placeholder="Video URL e.g. https://www.youtube.com/watch?v=MtN1YnoL46Q">
+	<button id="convert-button">Convert</button>
+</body>
+</html>
